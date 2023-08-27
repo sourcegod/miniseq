@@ -259,40 +259,39 @@ class MainApp(object):
             # Pop events off the pending_lst queue
             # Whether they are sending_lst for this tick
 
+            # if self._playing:
+            while True:
+                # TODO: manage too for click and tickcount
+                if not pending_lst:  break 
+                if (self._playing and self._clicking) or self._playing:
+                    if pending_lst[0].tick > seq.curtick: break
+                elif self._clicking:
+                    if pending_lst[0].tick > tickcount: break
+
+                # There is event ready to send, transfert it to the send_ing list
+                evt = heappop(pending_lst)
+                heappush(sending_lst, evt)
+
+            # Pop up to self._batchsize events off the input queue
             if self._playing:
-                while True:
-                    # TODO: manage too for click and tickcount
-                    if not pending_lst or pending_lst[0].tick > seq.curtick: break
-
-                    # There is event ready to send, transfert it to the send_ing list
-                    evt = heappop(pending_lst)
-                    heappush(sending_lst, evt)
-
-                # Pop up to self._batchsize events off the input queue
                 for i in range(bufsize):
                     # Seq event
-                    evt = seq.next_event()
-                    if evt is None: break
-                    # if _DEBUG: log.debug(f"evt.tick: {evt.tick} at count: {seq.curtick}, msg: {evt.message}")
-                    # log.debug("Got event from input queue: %r", evt)
-                    # Check whether event should be sent out immediately
-                    # or needs to be scheduled
-                    if evt.tick <= seq.curtick:
-                        heappush(sending_lst, evt)
-                        # log.debug("Queued event for output.")
-                    else:
-                        heappush(pending_lst, evt)
-                            # log.debug("Scheduled event in pending_lst queue.")
-            # """            
-            # Click event
-            if self._clicking:
-                while True:
-                    if not pending_lst or pending_lst[0].tick > tickcount: break
-                    # There is event ready to send, transfert it to the send_ing list
-                    evt = heappop(pending_lst)
-                    heappush(sending_lst, evt)
+                    if self._playing:
+                        evt = seq.next_event()
+                        if evt is None: break
+                        # if _DEBUG: log.debug(f"evt.tick: {evt.tick} at count: {seq.curtick}, msg: {evt.message}")
+                        # log.debug("Got event from input queue: %r", evt)
+                        # Check whether event should be sent out immediately
+                        # or needs to be scheduled
+                        if evt.tick <= seq.curtick:
+                            heappush(sending_lst, evt)
+                            # log.debug("Queued event for output.")
+                        else:
+                            heappush(pending_lst, evt)
+                                # log.debug("Scheduled event in pending_lst queue.")
 
-                for i in range(8): # number of notes per bar
+            if self._clicking:
+                for i in range(8):
                     evt = self.click_track.next_ev_roll()
                     if evt is None: break
                     # if _DEBUG: log.debug(f"evt.tick: {evt.tick} at count: {seq.curtick}, msg: {evt.message}")
@@ -300,8 +299,7 @@ class MainApp(object):
                         heappush(sending_lst, evt)
                     else:
                         heappush(pending_lst, evt)
-            # """
-
+             
             # If this batch contains any sending_lst events,
             # send them to the MIDI output.
             if sending_lst:

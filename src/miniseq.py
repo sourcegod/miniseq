@@ -59,11 +59,14 @@ class MainApp(object):
         """ Pause the player """
         
         if self._seq is None: return
+        state_clicking = self._clicking
         self._playing =0
         self._paused =1
+        if state_clicking: self.stop_click()
         self._seq.set_pos(-1)
         if self._mididriv:
             self._mididriv.panic()
+        if state_clicking: self.start_click()
         self.notify("Paused")
 
     #----------------------------------------
@@ -189,8 +192,12 @@ class MainApp(object):
         """
 
         if self.click_track is None: return
+        state_playing = self._playing
+        if state_playing: self.pause()
         self.click_track.active =0
         self._clicking =0
+        if state_playing: self.play()
+
             
         return self._clicking
 

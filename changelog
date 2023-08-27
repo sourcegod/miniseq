@@ -1,0 +1,28 @@
+# MiniSeq changelog
+Date: Sun, 27/08/2023
+Author: Coolbrother
+Last update: Sun, 27/08/2023
+
+# Date: Sun, 27/08/2023
+Version: 0.2
+-- Adding:
+	readline library, for Command Interactive
+	MidiMetronome object, including it in the midi_process function,
+	init_click, start_click, stop_click, is_clicking, 
+	in MidiMetronome and MainApp object.
+#----------------------------------------
+
+
+
+# Date: Fri, 25/08/2023
+Version: 0.1
+-- Adding functions: 
+panic, get_event, next_event, get_pos, set_pos,
+in SequencerThread object.
+
+-- Example of using a thread to send out queued-up, timed MIDI messages.
+Inspired from (sequencer.py), from (rtmidi) module example.
+Date: Wed, 23/08/2023
+Author: Coolbrother
+
+#----------------------------------------

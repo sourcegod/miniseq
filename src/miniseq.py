@@ -18,7 +18,7 @@ import logging
 from heapq import heappush, heappop
 import readline # for Commands
 import midisequencer as midseq
-
+import mididriver as drv
 _DEBUG =1
 _LOGFILE = "/tmp/app.log"
 logging.basicConfig(level=logging.DEBUG, format="%(message)s", filename=_LOGFILE, filemode='w')
@@ -322,7 +322,11 @@ class MainApp(object):
     #----------------------------------------
 
 
-    def main(self, out_port):
+    def main(self, outport):
+        mididriv = drv.MidiDriver()
+        (self._midiout, port) = mididriv.open_outport(outport)
+        
+        """
         try:
             self._midiout, port = open_midiport(
                 out_port,
@@ -332,6 +336,7 @@ class MainApp(object):
             return "Could not open MIDI input: %s" % exc
         except (EOFError, KeyboardInterrupt):
             return
+        """
 
         self._seq = midseq.MidiSequencer(self._midiout, bpm=100, ppqn=120)
         self._seq.set_process_callback(self.midi_process)

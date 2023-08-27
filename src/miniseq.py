@@ -321,8 +321,11 @@ class MainApp(object):
 
     #----------------------------------------
 
-
-    def main(self, outport):
+    def init_app(self, outport):
+        """ 
+        Init application 
+        From MainApp object 
+        """
         mididriv = drv.MidiDriver()
         (self._midiout, port) = mididriv.open_outport(outport)
         
@@ -345,6 +348,12 @@ class MainApp(object):
         self.gen_notes()
         seq.update_pos()
 
+
+    #----------------------------------------
+
+    def main(self, outport):
+
+        self.init_app(outport)
         sav_cmd = ""
         try:
            while 1:

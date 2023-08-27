@@ -33,6 +33,7 @@ class MainApp(object):
     """ Main App manager """
     def __init__(self):
         self._seq = None
+        self._mididriv = None
         self._midiout = None
         self._playing =0
         self._paused =0
@@ -61,7 +62,8 @@ class MainApp(object):
         self._playing =0
         self._paused =1
         self._seq.set_pos(-1)
-        self._seq.panic()
+        if self._mididriv:
+            self._mididriv.panic()
         self.notify("Paused")
 
     #----------------------------------------
@@ -80,7 +82,7 @@ class MainApp(object):
         """ Stop the player """
         if self._seq is None: return
         self._seq.stop_engine()
-        self._seq.panic()
+        self._mididriv.panic()
         self._seq.init_pos()
         self.notify("Stopped")
 
@@ -326,21 +328,10 @@ class MainApp(object):
         Init application 
         From MainApp object 
         """
-        mididriv = drv.MidiDriver()
-        (self._midiout, port) = mididriv.open_outport(outport)
-        
-        """
-        try:
-            self._midiout, port = open_midiport(
-                out_port,
-                "output",
-                client_name="MiniSeq")
-        except (IOError, ValueError) as exc:
-            return "Could not open MIDI input: %s" % exc
-        except (EOFError, KeyboardInterrupt):
-            return
-        """
 
+        self._mididriv = drv.MidiDriver()
+        (self._midiout, port) = self._mididriv.open_outport(outport)
+        
         self._seq = midseq.MidiSequencer(self._midiout, bpm=100, ppqn=120)
         self._seq.set_process_callback(self.midi_process)
         self._seq.init_seq()

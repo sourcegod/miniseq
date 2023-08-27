@@ -5,7 +5,13 @@
     Date: Sun, 27/08/2023
     Author: Coolbrother
 """
+import time
+from rtmidi.midiconstants import (
+        NOTE_ON, NOTE_OFF, ALL_SOUND_OFF, 
+                            CONTROL_CHANGE, RESET_ALL_CONTROLLERS
+        )
 from rtmidi.midiutil import open_midiport
+
 class MidiDriver(object):
     """ Midi driver manager """
     def __init__(self, midiout=None, outport=0):
@@ -20,7 +26,7 @@ class MidiDriver(object):
         port =0
 
         try:
-            self._midiout, port = open_midiport(
+            self.midiout, port = open_midiport(
                 outport,
                 "output",
                 client_name="MiniSeq")
@@ -29,9 +35,44 @@ class MidiDriver(object):
         except (EOFError, KeyboardInterrupt):
             return
         
-        return (self._midiout, port)
+        return (self.midiout, port)
     
     #----------------------------------------
+
+    def panic(self):
+        """ 
+        Send all_sound_off event, and reset all controllers events on all channels
+        Retrieve from (panic.py) example, from Rtmidi Library
+        from MidiDriver object
+        """
+
+        """
+        # Note: to create a message:
+        #  note_on = (msgtype + channel, note, vel)
+        # note_on = [0x90, 60, 100)
+        # control_change: (msgtype + channel, control, value)
+        # cc = (0xB0, 64, 0)
+        # note_on = 0x90
+        # note_off = 0x80
+        # control_change = 0xB0
+        # program_change = 0xC0
+        # all_sound_off = 0x78
+        # reset_all_controllers = 0x79
+        # all_notes_off = 0x7B
+        """
+
+
+        
+        if self.midiout is None: return
+        
+        for channel in range(16):
+            self.midiout.send_message([CONTROL_CHANGE | channel, ALL_SOUND_OFF, 0])
+            self.midiout.send_message([CONTROL_CHANGE | channel, RESET_ALL_CONTROLLERS, 0])
+            time.sleep(0.01)
+        
+
+    #----------------------------------------
+
 
 #========================================
 

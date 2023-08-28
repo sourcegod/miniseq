@@ -68,6 +68,12 @@ class MidiDriver(object):
     
     #----------------------------------------
 
+    def send_imm(self, msg):
+        """ Send message immediately """
+        self.midiout.send_message(msg)
+
+    #----------------------------------------
+
     def panic(self):
         """ 
         Send all_sound_off event, and reset all controllers events on all channels
@@ -93,7 +99,6 @@ class MidiDriver(object):
 
         
         if self.midiout is None: return
-        
         for channel in range(16):
             self.midiout.send_message([CONTROL_CHANGE | channel, ALL_SOUND_OFF, 0])
             self.midiout.send_message([CONTROL_CHANGE | channel, RESET_ALL_CONTROLLERS, 0])

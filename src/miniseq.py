@@ -315,7 +315,8 @@ class MainApp(object):
                 for i in range(len(sending_lst)):
                     evt = heappop(sending_lst)
                     # if _DEBUG: log.debug(f"evt.tick: {evt.tick} at curtick: {seq.curtick}, msg: {evt.message}")
-                    seq.handle_event(evt)
+                    # seq.handle_event(evt)
+                    self._driver.send_imm(evt.message)
                     # seq.handle_event(heappop(sending_lst))
 
             # loop speed adjustment

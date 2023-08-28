@@ -33,7 +33,7 @@ class MainApp(object):
     """ Main App manager """
     def __init__(self):
         self._seq = None
-        self._mididriv = None
+        self._driver = None
         self._midiout = None
         self._playing =0
         self._paused =0
@@ -49,8 +49,8 @@ class MainApp(object):
         seq = self._seq
         self._playing =1
         self._paused =0
-        if self._mididriv and not self._mididriv._running:
-            self._mididriv.start_engine()
+        if self._driver and not self._driver._running:
+            self._driver.start_engine()
         self.notify("Playing...")
 
     #----------------------------------------
@@ -64,8 +64,8 @@ class MainApp(object):
         self._paused =1
         if state_clicking: self.stop_click()
         self._seq.set_pos(-1)
-        if self._mididriv:
-            self._mididriv.panic()
+        if self._driver:
+            self._driver.panic()
         if state_clicking: self.start_click()
         self.notify("Paused")
 
@@ -83,9 +83,9 @@ class MainApp(object):
     def stop(self):
         """ Stop the player """
         if self._seq is None: return
-        if self._mididriv:
-            self._mididriv.stop_engine()
-            self._mididriv.panic()
+        if self._driver:
+            self._driver.stop_engine()
+            self._driver.panic()
         self._seq.init_pos()
         self.notify("Stopped")
 
@@ -112,8 +112,8 @@ class MainApp(object):
         """ Close the player """
         if self._seq is None: return
         self._seq.close_seq()
-        if self._mididriv: 
-            self._mididriv.close_driver()
+        if self._driver: 
+            self._driver.close_driver()
         self._midiout = None
 
     #----------------------------------------
@@ -180,8 +180,8 @@ class MainApp(object):
         self.init_click()
         self.click_track.active =1
         self._clicking =1
-        if self._mididriv and not self._mididriv._running:
-            self._mididriv.start_engine()
+        if self._driver and not self._driver._running:
+            self._driver.start_engine()
             
         return self._clicking
 
@@ -255,7 +255,7 @@ class MainApp(object):
         # beep()
         while 1: # seq._running\
                 # and (self._playing or self._clicking):
-            if not self._mididriv._running: break
+            if not self._driver._running: break
             if not self._playing and not self._clicking: break
             if self._playing and seq.curtick >= seq.len: 
                 self._playing =0
@@ -336,11 +336,11 @@ class MainApp(object):
         From MainApp object 
         """
 
-        self._mididriv = drv.MidiDriver()
-        (self._midiout, port) = self._mididriv.open_outport(outport)
+        self._driver = drv.MidiDriver()
+        (self._midiout, port) = self._driver.open_outport(outport)
         
         self._seq = midseq.MidiSequencer(self._midiout, bpm=100, ppqn=120)
-        self._mididriv.set_process_callback(self.midi_process)
+        self._driver.set_process_callback(self.midi_process)
         self._seq.init_seq()
         seq = self._seq
         self.gen_notes()

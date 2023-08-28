@@ -6,18 +6,8 @@
     Author: Coolbrother
 """
 
-import threading
-import time
-import sys
-from rtmidi.midiconstants import (NOTE_ON, NOTE_OFF, ALL_SOUND_OFF, 
-                                  CONTROL_CHANGE, RESET_ALL_CONTROLLERS)
+from rtmidi.midiconstants import (NOTE_ON, NOTE_OFF)
 from collections import deque
-
-def beep():
-    print("\a\n")
-
-#----------------------------------------
-
 
 class MidiEvent(object):
     """Container for a MIDI message and a timing tick.
@@ -284,12 +274,7 @@ class MidiSequencer(object):
         self._index =0
         self.curtick =0
         self.len =0
-
-        self._stopped = threading.Event()
-        self._finished = threading.Event()
-
         # Counts elapsed ticks when sequence is running
-        self._tickcount = None
         self._tickms = None # number of millisec for one tick
         # Max number of input queue events to get in one loop
         self._batchsize = 100

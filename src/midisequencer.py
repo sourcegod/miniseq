@@ -264,11 +264,7 @@ class MidiMetronome(object):
 #========================================
 
 class MidiSequencer(object):
-    def __init__(self, midiout, queue=None, bpm=120.0, ppqn=120):
-        # super(SequencerThread, self).__init__()
-        # log.debug("Created sequencer thread.")
-        self.midiout = midiout
-
+    def __init__(self, bpm=120.0, ppqn=120):
         # inter-thread communication
         self.queue = deque()
         self._index =0
@@ -425,23 +421,10 @@ class MidiSequencer(object):
 
     #----------------------------------------
 
-
-    def handle_event(self, event):
-        """Handle the event by sending it to MIDI out.
-
-        Could be overwritten, e.g. to handle meta events, like time signature
-        and tick division changes.
-
-        """
-        # log.debug("Midi Out: %r", event.message)
-        self.midiout.send_message(event.message)
-
-    #----------------------------------------
-
 #========================================
 
 if __name__ == "__main__":
-    seq = MidiSequencer(midiout=None)
+    seq = MidiSequencer()
     seq.init_seq()
     input("It's Ok...")
 #----------------------------------------

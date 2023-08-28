@@ -315,7 +315,6 @@ class MainApp(object):
                 for i in range(len(sending_lst)):
                     evt = heappop(sending_lst)
                     # if _DEBUG: log.debug(f"evt.tick: {evt.tick} at curtick: {seq.curtick}, msg: {evt.message}")
-                    # seq.handle_event(evt)
                     self._driver.send_imm(evt.message)
                     # seq.handle_event(heappop(sending_lst))
 
@@ -340,7 +339,7 @@ class MainApp(object):
         self._driver = drv.MidiDriver()
         (self._midiout, port) = self._driver.open_outport(outport)
         
-        self._seq = midseq.MidiSequencer(self._midiout, bpm=100, ppqn=120)
+        self._seq = midseq.MidiSequencer(bpm=100, ppqn=120)
         self._driver.set_process_callback(self.midi_process)
         self._seq.init_seq()
         seq = self._seq

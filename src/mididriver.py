@@ -11,7 +11,7 @@ from rtmidi.midiconstants import (
         NOTE_ON, NOTE_OFF, ALL_SOUND_OFF, 
                             CONTROL_CHANGE, RESET_ALL_CONTROLLERS
         )
-from rtmidi.midiutil import open_midiport
+from rtmidi.midiutil import (open_midiport, list_input_ports, list_output_ports)
 
 def beep():
     print("\a\n")
@@ -39,6 +39,16 @@ class MidiDriver(object):
         self.close_ports()
         if self.midiout:
             self.midiout = None
+    #----------------------------------------
+
+    def print_input_ports(self):
+        list_input_ports()
+
+    #----------------------------------------
+
+    def print_output_ports(self):
+        list_output_ports()
+
     #----------------------------------------
 
     def open_outport(self, outport):
@@ -174,5 +184,7 @@ class MidiDriver(object):
 
 if __name__ == "__main__":
     drv = MidiDriver()
+    drv.print_input_ports()
+    drv.print_output_ports()
     input("It's Ok...")
 #----------------------------------------

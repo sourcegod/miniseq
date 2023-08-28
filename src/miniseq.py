@@ -330,14 +330,14 @@ class MainApp(object):
 
     #----------------------------------------
 
-    def init_app(self, outport):
+    def init_app(self, output_port):
         """ 
         Init application 
         From MainApp object 
         """
 
         self._driver = drv.MidiDriver()
-        (self._midiout, port) = self._driver.open_outport(outport)
+        (self._midiout, port) = self._driver.open_output_port(output_port)
         
         self._seq = midseq.MidiSequencer(bpm=100, ppqn=120)
         self._driver.set_process_callback(self.midi_process)
@@ -386,9 +386,11 @@ class MainApp(object):
 #========================================
 
 if __name__ == '__main__':
-    out_port = "TiMidity:TiMidity port 0 128:0"
+    # Note: output_port can be a number or a name
+    # output_port = "TiMidity:TiMidity port 0 128:0"
+    output_port =1
     if len(sys.argv) > 1: 
-        out_port = sys.argv
+        output_port = sys.argv[1]
     app = MainApp()
-    app.main(out_port)
+    app.main(output_port)
 #----------------------------------------

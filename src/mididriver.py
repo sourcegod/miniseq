@@ -51,12 +51,14 @@ class MidiDriver(object):
 
     #----------------------------------------
 
-    def open_outport(self, outport):
-        port =0
+    def open_output_port(self, output_port=None):
+        """
+        Note: output_port can be a number or a string
+        """
 
         try:
             self.midiout, port = open_midiport(
-                outport,
+                output_port,
                 "output",
                 client_name="MiniSeq")
         except (IOError, ValueError) as exc:

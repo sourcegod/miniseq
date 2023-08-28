@@ -49,8 +49,8 @@ class MainApp(object):
         seq = self._seq
         self._playing =1
         self._paused =0
-        if not self._seq._running:
-            self._seq.start_engine()
+        if self._mididriv and not self._mididriv._running:
+            self._mididriv.start_engine()
         self.notify("Playing...")
 
     #----------------------------------------
@@ -80,12 +80,12 @@ class MainApp(object):
 
     #----------------------------------------
 
-
     def stop(self):
         """ Stop the player """
         if self._seq is None: return
-        self._seq.stop_engine()
-        self._mididriv.panic()
+        if self._mididriv:
+            self._mididriv.stop_engine()
+            self._mididriv.panic()
         self._seq.init_pos()
         self.notify("Stopped")
 
@@ -112,6 +112,8 @@ class MainApp(object):
         """ Close the player """
         if self._seq is None: return
         self._seq.close_seq()
+        if self._mididriv: 
+            self._mididriv.close_driver()
         self._midiout = None
 
     #----------------------------------------
@@ -178,8 +180,8 @@ class MainApp(object):
         self.init_click()
         self.click_track.active =1
         self._clicking =1
-        if not self._seq._running:
-            self._seq.start_engine()
+        if self._mididriv and not self._mididriv._running:
+            self._mididriv.start_engine()
             
         return self._clicking
 
@@ -253,7 +255,7 @@ class MainApp(object):
         # beep()
         while 1: # seq._running\
                 # and (self._playing or self._clicking):
-            if not seq._running: break
+            if not self._mididriv._running: break
             if not self._playing and not self._clicking: break
             if self._playing and seq.curtick >= seq.len: 
                 self._playing =0
@@ -338,7 +340,7 @@ class MainApp(object):
         (self._midiout, port) = self._mididriv.open_outport(outport)
         
         self._seq = midseq.MidiSequencer(self._midiout, bpm=100, ppqn=120)
-        self._seq.set_process_callback(self.midi_process)
+        self._mididriv.set_process_callback(self.midi_process)
         self._seq.init_seq()
         seq = self._seq
         self.gen_notes()

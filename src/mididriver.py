@@ -6,11 +6,17 @@
     Author: Coolbrother
 """
 import time
+import threading
 from rtmidi.midiconstants import (
         NOTE_ON, NOTE_OFF, ALL_SOUND_OFF, 
                             CONTROL_CHANGE, RESET_ALL_CONTROLLERS
         )
 from rtmidi.midiutil import open_midiport
+
+def beep():
+    print("\a\n")
+
+#----------------------------------------
 
 class MidiDriver(object):
     """ Midi driver manager """
@@ -19,9 +25,22 @@ class MidiDriver(object):
         self._thread = None
         self.midiout = midiout
         self._outport = outport
+        self._process_callback = None
+        self._bufsize =64
+        self._frames =480
+
 
     #----------------------------------------
     
+    
+    def close_driver(self):
+        if self._running:
+            self.stop_engine()
+        self.close_ports()
+        if self.midiout:
+            self.midiout = None
+    #----------------------------------------
+
     def open_outport(self, outport):
         port =0
 
@@ -36,6 +55,16 @@ class MidiDriver(object):
             return
         
         return (self.midiout, port)
+    
+    #----------------------------------------
+
+    def close_ports(self):
+        """ Closing midi ports """
+        if self.midiout:
+            self.midiout.close_port()
+            del self.midiout
+            self.midiout = None
+        print("Closing Midiout port")
     
     #----------------------------------------
 
@@ -73,6 +102,68 @@ class MidiDriver(object):
 
     #----------------------------------------
 
+    def start_engine(self):
+        """ start the thread engine """
+        
+        if self._running: return
+        if self._thread is not None: return
+        self._running =1
+        self._thread = threading.Thread(target=self._run, args=())
+        self._thread.daemon = True
+        self._thread.start()
+        beep()
+        print("Starting Midi Engine.")
+
+    #----------------------------------------
+
+    def stop_engine(self, timeout=5):
+        """ Set thread stop engine, causing it to exit its mainloop. """
+        
+        if self._thread is None: return
+        self._running =0
+        self._thread.join()
+        self._thread = None
+        beep()
+        print("Stopping Midi Engine")
+
+        """
+        self._stopped.set()
+        # log.debug("SequencerThread stop event set.")
+
+        if self.is_alive():
+            self._finished.wait(timeout)
+        """
+
+
+    #----------------------------------------
+ 
+    def set_process_callback(self, proc_cback):
+        self._proc_cback = proc_cback
+
+    #----------------------------------------
+    
+    def _run(self):
+        """
+        Start the thread's main loop.
+
+        The thread will watch for events on the input queue and either send
+        them immediately to the MIDI output or queue them for later output, if
+        their timestamp has not been reached yet.
+        """
+
+        # busy loop to wait for time when next batch of events needs to
+        # be written to output
+        if self._proc_cback is None: return
+        try:
+            while self._running:
+                self._proc_cback(self._frames, self._bufsize)
+                # Saving CPU time
+                time.sleep(0.01)
+        except KeyboardInterrupt:
+            # log.debug("KeyboardInterrupt / INT signal received.")
+            return
+
+    #----------------------------------------
 
 #========================================
 

@@ -277,9 +277,6 @@ class MidiSequencer(object):
     def __init__(self, midiout, queue=None, bpm=120.0, ppqn=120):
         # super(SequencerThread, self).__init__()
         # log.debug("Created sequencer thread.")
-        self._running =0
-        self._thread = None
-
         self.midiout = midiout
 
         # inter-thread communication
@@ -296,15 +293,12 @@ class MidiSequencer(object):
         self._tickms = None # number of millisec for one tick
         # Max number of input queue events to get in one loop
         self._batchsize = 100
-        self._bufsize =64
-        self._frames =480
 
         # run-time options
         self.ppqn = ppqn
         self._bpm = bpm
         # Warning: bpm is a property function, not a simple variable
         self.bpm = bpm
-        self._proc_cback = None
         self._metro = MidiMetronome(ppq=self.ppqn)
         self.click_track = None
 
@@ -333,51 +327,7 @@ class MidiSequencer(object):
     #----------------------------------------
 
 
-    def start_engine(self):
-        """ start the thread engine """
-        
-        if self._running: return
-        if self._thread is not None: return
-        self._running =1
-        self._thread = threading.Thread(target=self._run, args=())
-        self._thread.daemon = True
-        self._thread.start()
-        beep()
-
-    #----------------------------------------
-
-    def stop_engine(self, timeout=5):
-        """ Set thread stop engine, causing it to exit its mainloop. """
-        
-        if self._thread is None: return
-        self._running =0
-        self._thread.join()
-        self._thread = None
-        beep()
-        print("Stopping the Engine")
-
-        
-        """
-        self._stopped.set()
-        # log.debug("SequencerThread stop event set.")
-
-        if self.is_alive():
-            self._finished.wait(timeout)
-        """
-
-
-    #----------------------------------------
-    
-    def close_ports(self):
-        """ Closing midi ports """
-        if self.midiout:
-            self.midiout.close_port()
-            del self.midiout
-            self.midiout = None
-        print("Closing Midiout port")
-    
-    #----------------------------------------
-
+   
     def init_seq(self):
         """
         Init the sequencer
@@ -389,10 +339,11 @@ class MidiSequencer(object):
     #----------------------------------------
 
     def close_seq(self):
-        """ Close Midi ports and stop the engine """
+        """ 
+        Deprecated function
+        Close Midi ports and stop the engine 
+        """
 
-        self.close_ports()
-        self.stop_engine()
         print("Closing the Sequencer")
 
     #----------------------------------------
@@ -499,35 +450,6 @@ class MidiSequencer(object):
         """
         # log.debug("Midi Out: %r", event.message)
         self.midiout.send_message(event.message)
-
-    #----------------------------------------
-
-    def set_process_callback(self, proc_cback):
-        self._proc_cback = proc_cback
-
-    #----------------------------------------
-    
-    def _run(self):
-        """
-        Start the thread's main loop.
-
-        The thread will watch for events on the input queue and either send
-        them immediately to the MIDI output or queue them for later output, if
-        their timestamp has not been reached yet.
-        """
-
-        # busy loop to wait for time when next batch of events needs to
-        # be written to output
-        if self._proc_cback is None: return
-        try:
-            while self._running:
-                self._proc_cback(self._frames, self._bufsize)
-                # Saving CPU time
-                time.sleep(0.01)
-
-        except KeyboardInterrupt:
-            # log.debug("KeyboardInterrupt / INT signal received.")
-            return
 
     #----------------------------------------
 

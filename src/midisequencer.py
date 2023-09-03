@@ -6,8 +6,13 @@
     Author: Coolbrother
 """
 
-from rtmidi.midiconstants import (NOTE_ON, NOTE_OFF)
 from collections import deque
+
+# Midi constants
+NOTE_OFF = 0x80
+NOTE_ON =0x90
+CONTROL_CHANGE =0xB0
+PROGRAM_CHANGE =0xC0
 
 class MidiEvent(object):
     """Container for a MIDI message and a timing tick.

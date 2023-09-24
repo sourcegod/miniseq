@@ -20,14 +20,16 @@ def beep():
 
 class MidiDriver(object):
     """ Midi driver manager """
-    def __init__(self, midiout=None, outport=0):
+    def __init__(self, midiout=None, outport=0, rate=48000, frames=480):
         self._running =0
         self._thread = None
         self.midiout = midiout
         self._outport = outport
         self._process_callback = None
+        self._rate = rate
         self._bufsize =64
-        self._frames =480
+        self._frames = frames
+        self._delay_ms = float(1 / (self._rate / self._frames))
 
 
     #----------------------------------------
@@ -171,11 +173,14 @@ class MidiDriver(object):
         # busy loop to wait for time when next batch of events needs to
         # be written to output
         if self._proc_cback is None: return
+        _delay_ms = self._delay_ms
+        print(f"voici delay_ms: {_delay_ms:.3f} msec.")
         try:
             while self._running:
                 self._proc_cback(self._frames, self._bufsize)
                 # Saving CPU time
-                time.sleep(0.01)
+                time.sleep(_delay_ms)
+                # beep()
         except KeyboardInterrupt:
             # log.debug("KeyboardInterrupt / INT signal received.")
             return

@@ -13,6 +13,7 @@ NOTE_OFF = 0x80
 NOTE_ON =0x90
 CONTROL_CHANGE =0xB0
 PROGRAM_CHANGE =0xC0
+_id =0
 
 class MidiEvent(object):
     """Container for a MIDI message and a timing tick.
@@ -23,11 +24,15 @@ class MidiEvent(object):
 
     """
 
-    __slots__ = ('tick', 'message')
+    __slots__ = ('id', 'tick', 'message', 'deltick')
 
-    def __init__(self, tick=0, message=None):
+    def __init__(self, tick=0, message=None, deltick=0):
+        global _id
+        self.id = _id
+        _id +=1
         self.tick = tick
         self.message = message
+        self.deltick = deltick
 
     #----------------------------------------
 
@@ -37,30 +42,36 @@ class MidiEvent(object):
     #----------------------------------------
 
     def __eq__(self, other):
+        # print("dans __eq__, Je passe par laa")
         return (self.tick == other.tick and
-                self.message == other.message)
+                # self.message == other.message)
+                self.id < other.id)
 
     #----------------------------------------
-
+    
     def __lt__(self, other):
         return self.tick < other.tick
 
     #----------------------------------------
 
+    
     def __le__(self, other):
         return self.tick <= other.tick
 
     #----------------------------------------
+    
 
     def __gt__(self, other):
         return self.tick > other.tick
 
     #----------------------------------------
 
+    
     def __ge__(self, other):
         return self.tick >= other.tick
 
     #----------------------------------------
+    
 
 #========================================
 
@@ -306,9 +317,10 @@ class MidiSequencer(object):
 
     #----------------------------------------
 
-    def add_quarter(self, tick, note, vel=100):
-        self.add_event((NOTE_ON, note, vel), tick)
-        self.add_event((NOTE_OFF, note, 0), tick=tick + self.ppqn)
+    def add_quarter(self, tick, note, vel=100, delta=0):
+        self.add_event((NOTE_ON, note, vel), tick, 0)
+        # Note: heapq cannot preserve element order with equal value, so, an around is to substract -1 to note_off tick
+        self.add_event((NOTE_OFF, note, 0), tick=tick + self.ppqn, delta=self.ppqn)
 
     #----------------------------------------
 
@@ -389,7 +401,9 @@ class MidiSequencer(object):
         if not event.tick:
             event.tick = tick
 
-        event.tick += delta
+        # event.tick += delta
+        event.deltick = delta
+        # 
         self.queue.append(event)
 
     #----------------------------------------

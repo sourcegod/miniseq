@@ -23,7 +23,12 @@ _DEBUG =1
 _LOGFILE = "/tmp/app.log"
 logging.basicConfig(level=logging.DEBUG, format="%(message)s", filename=_LOGFILE, filemode='w')
 log = logging.getLogger(__name__)
-
+offset =0
+msg = None
+proccount =0
+evt = None
+_id =0
+_rate = 24000
 def beep():
     print("\a\n")
 
@@ -39,6 +44,7 @@ class MainApp(object):
         self._paused =0
         self.click_track = None
         self._clicking =0
+        self._sending_lst = []
 
 
     #----------------------------------------
@@ -122,30 +128,32 @@ class MainApp(object):
         if self._seq is None: return
         seq = self._seq
         tick = 0
+        deltick =0 # delta tick
         ppq = seq.ppqn
         # Game C Major
-        seq.add_quarter(tick, 60)
-        seq.add_quarter(tick + ppq, 62)
-        seq.add_quarter(tick + ppq * 2, 64)
-        seq.add_quarter(tick + ppq * 3, 65)
-        seq.add_quarter(tick + ppq * 4, 67)
-        seq.add_quarter(tick + ppq * 5, 69)
-        seq.add_quarter(tick + ppq * 6, 71)
-        seq.add_quarter(tick + ppq * 7, 72)
+        seq.add_quarter(tick, 60, ppq)
+        deltick = ppq
+        seq.add_quarter(tick + ppq, 62, deltick)
+        seq.add_quarter(tick + ppq * 2, 64, deltick)
+        seq.add_quarter(tick + ppq * 3, 65, deltick)
+        seq.add_quarter(tick + ppq * 4, 67, deltick)
+        seq.add_quarter(tick + ppq * 5, 69, deltick)
+        seq.add_quarter(tick + ppq * 6, 71, deltick)
+        seq.add_quarter(tick + ppq * 7, 72, deltick)
 
 
         # arpegio
         tick = ppq * 8
-        seq.add_quarter(tick, 60)
-        seq.add_quarter(tick + ppq, 64)
-        seq.add_quarter(tick + ppq * 2, 67)
-        seq.add_quarter(tick + ppq * 3, 72)
+        seq.add_quarter(tick, 60, deltick)
+        seq.add_quarter(tick + ppq, 64, deltick)
+        seq.add_quarter(tick + ppq * 2, 67, deltick)
+        seq.add_quarter(tick + ppq * 3, 72, deltick)
 
         tick = ppq * 12
-        seq.add_quarter(tick, 60)
-        seq.add_quarter(tick + ppq, 64)
-        seq.add_quarter(tick + ppq * 2, 67)
-        seq.add_quarter(tick + ppq * 3, 72)
+        seq.add_quarter(tick, 60, deltick)
+        seq.add_quarter(tick + ppq, 64, deltick)
+        seq.add_quarter(tick + ppq * 2, 67, deltick)
+        seq.add_quarter(tick + ppq * 3, 72, deltick)
 
     #----------------------------------------
 
@@ -241,7 +249,7 @@ class MainApp(object):
 
     #----------------------------------------
 
-    def midi_process(self, nbframes, bufsize):
+    def midi_process0(self, nbframes, bufsize):
         """
         Processing midi callback
         """
@@ -329,6 +337,85 @@ class MainApp(object):
             if self._playing: seq.curtick +=1
 
     #----------------------------------------
+
+    def next_midi_ev(self):
+        """
+        Returns next Midi event between seq event or click event.
+        """
+        
+        if self._seq is None: return
+        seq = self._seq
+        tickcount =0
+        _sending_lst = self._sending_lst
+
+        # _sending_lst is empty
+        # Pop up to self._batchsize events off the input queue
+        if _sending_lst:
+            evt = heappop(_sending_lst)[0]
+            log.debug(f"From Next_midi_ev func, returning tick: {evt.tick}, id: {evt.id},\nMessage: {evt.message}")
+            return evt
+
+        else: # not _sending_lst:
+            if self._playing:
+                for i in range(4):
+                    # Seq event
+                    evt = seq.next_event()
+                    if evt is None: break
+                    # if _DEBUG: log.debug(f"evt.tick: {evt.tick} at count: {seq.curtick}, msg: {evt.message}")
+                    # Note: we add a tuple with evt.id to manage event equality with tick
+                    heappush(_sending_lst, (evt, evt.id))
+
+            if self._clicking:
+                for i in range(4):
+                    evt = self.click_track.next_ev_roll()
+                    if evt is None: break
+                    # if _DEBUG: log.debug(f"evt.tick: {evt.tick} at count: {seq.curtick}, msg: {evt.message}")
+                    heappush(_sending_lst, (evt, evt.id))
+
+       
+    #----------------------------------------
+
+
+    def midi_process(self, frames, bufsize):
+        global offset
+        global msg
+        global proccount
+        event_count =0
+        global evt 
+        frames =240
+        proccount +=1
+        log.debug(f"[Enter In midi_process Func], frames: {frames}, proccount: {proccount}, offset: {offset}, Tickms: {self._seq._tickms}")
+        while True:
+            # beep()
+            if not self._playing: break
+            if offset >= frames:
+                offset -= frames
+                log.debug(f"[Before returning, proccount]: {proccount}, Offset Dec: {offset}\n")
+                return  # We'll take care of this in the next block ...
+            # Note: This may raise an exception:
+            # Sample offset of the current block midi Data in the current process
+            # But, offset can be 0 too, it works???
+            
+            # port.write_midi_event(offset, msg.bytes())
+            if evt:
+                log.debug(f"[Before Write Midi Event]: proccount: {proccount}, Offset: {offset},\nMessage: {evt.message}, tick: {evt.tick}, id: {evt.id}, event_count: {event_count}\n")
+                self._driver.send_imm(evt.message)
+                evt = None
+            try:
+                evt = self.next_midi_ev()
+            except StopIteration:
+                return
+
+            # print(f"Offset: {offset}, msg_time: {msg.time}")
+            if evt:
+                msg_time = evt.deltick * self._seq._tickms
+                log.debug(f"[Before Offset Inc]: Offset: {offset}, tick: {evt.tick}, deltick: {evt.deltick}, id: {evt.id},\nmsg_time: {msg_time}, Message: {evt.message}")
+                offset += round(msg_time * _rate)
+                log.debug(f"[After Offset Inc]: proccount: {proccount}, Offset: {offset}, evt.tick: {evt.tick}, evt.deltick: {evt.deltick}\n")
+                event_count +=1
+
+    #----------------------------------------
+
 
     def init_app(self, output_port):
         """ 
